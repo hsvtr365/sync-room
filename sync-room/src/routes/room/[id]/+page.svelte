@@ -535,6 +535,22 @@
     });
   }
 
+  function scrollToTop() {
+    if (!gridContainer) return;
+    gridContainer.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
+  function scrollToBottom() {
+    if (!gridContainer) return;
+    gridContainer.scrollTo({
+      top: gridContainer.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+
   async function handleUpdateSettings(e: Event) {
     e.preventDefault();
     if (!room || isSavingSettings) return;
@@ -876,7 +892,7 @@
         tabindex="0"
       >
         <div
-        class="grid h-full"
+        class="grid min-h-full"
         style="
           grid-template-columns: 64px repeat({dates.length}, minmax(var(--col-width, 76px), 1fr));
           grid-template-rows: auto repeat({timeSlots.length}, minmax(36px, 1fr));
@@ -989,14 +1005,38 @@
     </div>
   </div>
 
-    <!-- Floating [now] Button (FAB anchored at the bottom right) -->
-    <button
-      class="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-[10px] uppercase flex items-center justify-center shadow-2xl active:scale-90 transition-all z-30 cursor-pointer"
-      onclick={scrollToNow}
-      aria-label="현재 시각으로 바로가기"
-    >
-      now
-    </button>
+    <!-- Floating Navigation Button Stack (FAB anchored at the bottom right) -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-2 z-30 items-center">
+      <!-- Scroll to Top Button -->
+      <button
+        class="w-10 h-10 bg-white hover:bg-gray-50 text-gray-500 rounded-full border border-gray-200/80 flex items-center justify-center shadow-lg active:scale-90 transition-all cursor-pointer text-sm font-semibold select-none"
+        onclick={scrollToTop}
+        aria-label="최상단으로 이동"
+        title="맨 위로"
+      >
+        ▲
+      </button>
+
+      <!-- Go to Current Time (now) Button -->
+      <button
+        class="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-[10px] uppercase flex items-center justify-center shadow-2xl active:scale-90 transition-all cursor-pointer select-none"
+        onclick={scrollToNow}
+        aria-label="현재 시각으로 바로가기"
+        title="현재 시간"
+      >
+        now
+      </button>
+
+      <!-- Scroll to Bottom Button -->
+      <button
+        class="w-10 h-10 bg-white hover:bg-gray-50 text-gray-500 rounded-full border border-gray-200/80 flex items-center justify-center shadow-lg active:scale-90 transition-all cursor-pointer text-sm font-semibold select-none"
+        onclick={scrollToBottom}
+        aria-label="최하단으로 이동"
+        title="맨 아래로"
+      >
+        ▼
+      </button>
+    </div>
 
     <!-- Bottom Sheet Settings Menu (Host Only) -->
     {#if showSettings && isHost}
