@@ -52,9 +52,9 @@ log "[1/5] stop existing process"
 
 log "[2/5] install dependencies"
 if [[ -f "$ROOT_DIR/package-lock.json" ]]; then
-	npm ci
+	npm ci --include=dev
 else
-	npm install
+	npm install --include=dev
 fi
 
 log "[3/5] build"
