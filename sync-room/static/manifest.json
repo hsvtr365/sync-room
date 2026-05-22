@@ -1,0 +1,22 @@
+{
+  "short_name": "suji",
+  "name": "suji - 실시간 그룹 일정 조율",
+  "description": "불가능한 시간만 칠해 빠르게 그룹 약속/게임 시간을 조율하는 시각화 도구",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "favicon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f9fafb",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "portrait"
+}
