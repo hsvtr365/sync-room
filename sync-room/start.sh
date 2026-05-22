@@ -16,13 +16,35 @@ have() {
 	command -v "$1" >/dev/null 2>&1
 }
 
+load_env_file() {
+	local env_file="$1"
+	local line key value
+
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		line="${line%$'\r'}"
+		[[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+		[[ "$line" != *=* ]] && continue
+
+		line="${line#export }"
+		key="${line%%=*}"
+		value="${line#*=}"
+		key="${key//[[:space:]]/}"
+
+		[[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+
+		case "$value" in
+			\"*\") value="${value:1:${#value}-2}" ;;
+			\'*\') value="${value:1:${#value}-2}" ;;
+		esac
+
+		export "$key=$value"
+	done < "$env_file"
+}
+
 cd "$ROOT_DIR"
 
 if [[ -f "$ROOT_DIR/.env" ]]; then
-	set -a
-	# shellcheck disable=SC1091
-	source "$ROOT_DIR/.env"
-	set +a
+	load_env_file "$ROOT_DIR/.env"
 fi
 
 log "[1/5] stop existing process"
