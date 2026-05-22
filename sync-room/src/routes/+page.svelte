@@ -3,13 +3,14 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { db } from '$lib/db-client';
-  import { isUnitAllowed, getRecommendedUnit } from '$lib/schedule-utils';
+  import { isUnitAllowed, getRecommendedUnit, getTodayStr, getEndDateFromDays, getDaysFromEndDate } from '$lib/schedule-utils';
 
   let activeTab = $state<'create' | 'join'>('create');
-  
+
   // Room Creation States
   let title = $state('');
-  let rangeDays = $state(7);
+  let endDate = $state(getEndDateFromDays(7));
+  let rangeDays = $derived(getDaysFromEndDate(endDate));
   let timeStart = $state('09:00');
   let timeEnd = $state('24:00');
   let displayUnit = $state('1hour');
@@ -86,6 +87,14 @@
         .single();
 
       if (partError) throw partError;
+
+      // Update host_id on the newly created room
+      const { error: updateHostError } = await db
+        .from('rooms')
+        .update({ host_id: partData.id })
+        .eq('id', roomData.id);
+
+      if (updateHostError) throw updateHostError;
 
       localStorage.setItem(`room_session_${roomData.id}`, JSON.stringify({
         participant_id: partData.id,
@@ -170,14 +179,14 @@
 
     <!-- iOS style Segmented Control (Tabs) -->
     <div class="bg-gray-200/80 p-0.5 rounded-xl flex mb-6">
-      <button 
+      <button
         type="button"
         class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all {activeTab === 'create' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}"
         onclick={() => activeTab = 'create'}
       >
         새 방 만들기
       </button>
-      <button 
+      <button
         type="button"
         class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all {activeTab === 'join' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}"
         onclick={() => activeTab = 'join'}
@@ -192,36 +201,41 @@
         <form onsubmit={handleCreateRoom} class="space-y-4">
           <div>
             <label for="title" class="block text-xs font-semibold text-gray-500 mb-1.5">모임 이름</label>
-            <input 
+            <input
               id="title"
-              type="text" 
-              bind:value={title} 
-              placeholder="예: 격전 대기방, 주말 스터디" 
+              type="text"
+              bind:value={title}
+              placeholder="예: 격전 대기방, 주말 스터디"
               class="w-full bg-gray-50 border border-gray-200/70 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-              required 
+              required
             />
           </div>
 
           <div>
             <label for="nickname-create" class="block text-xs font-semibold text-gray-500 mb-1.5">내 닉네임</label>
-            <input 
+            <input
               id="nickname-create"
-              type="text" 
-              bind:value={nicknameCreate} 
-              placeholder="예: 꼬북이" 
+              type="text"
+              bind:value={nicknameCreate}
+              placeholder="예: 꼬북이"
               class="w-full bg-gray-50 border border-gray-200/70 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-              required 
+              required
             />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label for="range-days" class="block text-xs font-semibold text-gray-500 mb-1.5">표시 기간</label>
-              <select id="range-days" bind:value={rangeDays} class="w-full bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 transition-all">
-                {#each Array.from({length: 30}, (_, i) => i + 1) as day}
-                  <option value={day}>{day}일 동안</option>
-                {/each}
-              </select>
+              <label for="end-date" class="block text-xs font-semibold text-gray-500 mb-1.5">
+                마감 날짜 <span class="text-blue-600 font-normal">({rangeDays}일 동안)</span>
+              </label>
+              <input
+                id="end-date"
+                type="date"
+                bind:value={endDate}
+                min={getTodayStr()}
+                class="w-full bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+                required
+              />
             </div>
 
             <div>
@@ -279,8 +293,8 @@
             </div>
           {/if}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
             disabled={isCreating}
           >
@@ -291,25 +305,25 @@
         <form onsubmit={handleJoinRoom} class="space-y-4">
           <div>
             <label for="invitation-code" class="block text-xs font-semibold text-gray-500 mb-1.5">초대 코드 (방 ID)</label>
-            <input 
+            <input
               id="invitation-code"
-              type="text" 
-              bind:value={invitationCode} 
-              placeholder="공유받은 초대코드 붙여넣기" 
+              type="text"
+              bind:value={invitationCode}
+              placeholder="공유받은 초대코드 붙여넣기"
               class="w-full bg-gray-50 border border-gray-200/70 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-              required 
+              required
             />
           </div>
 
           <div>
             <label for="nickname-join" class="block text-xs font-semibold text-gray-500 mb-1.5">내 닉네임</label>
-            <input 
+            <input
               id="nickname-join"
-              type="text" 
-              bind:value={nicknameJoin} 
-              placeholder="예: 홍길동" 
+              type="text"
+              bind:value={nicknameJoin}
+              placeholder="예: 홍길동"
               class="w-full bg-gray-50 border border-gray-200/70 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
-              required 
+              required
             />
           </div>
 
@@ -319,8 +333,8 @@
             </div>
           {/if}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
             disabled={isJoining}
           >

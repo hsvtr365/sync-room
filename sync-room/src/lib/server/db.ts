@@ -1,10 +1,10 @@
 import pg from 'pg';
-import { DATABASE_URL } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 const { Pool } = pg;
 
 export const pool = new Pool({
-  connectionString: DATABASE_URL
+  connectionString: env.DATABASE_URL
 });
 
 export async function initDb() {
@@ -59,6 +59,14 @@ export async function initDb() {
         end_at TIMESTAMP WITH TIME ZONE NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
       )
+    `);
+
+    // 4. Apply migrations/column updates
+    await client.query(`
+      ALTER TABLE rooms ADD COLUMN IF NOT EXISTS host_id UUID;
+    `);
+    await client.query(`
+      ALTER TABLE participants ADD COLUMN IF NOT EXISTS last_modified_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL;
     `);
 
     console.log('PostgreSQL database schema initialized successfully.');

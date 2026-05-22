@@ -141,13 +141,13 @@ export function getAbsoluteSlotDates(
 ): { start: Date; end: Date } {
   const baseDate = new Date(dateSlot.date);
   const startHours = timeStringToMinutes(timeStart);
-  
+
   // Set time of the base date to the room's start time + the current slot's offset
   const absoluteStartMin = startHours + startMinOffset;
-  
+
   const start = new Date(baseDate);
   start.setMinutes(start.getMinutes() + absoluteStartMin);
-  
+
   const end = new Date(start);
   end.setMinutes(end.getMinutes() + durationMin);
 
@@ -162,7 +162,7 @@ export function get15MinSubSlots(
 ): { start: Date; end: Date; startISO: string; endISO: string }[] {
   const subSlots: { start: Date; end: Date; startISO: string; endISO: string }[] = [];
   const { start, end } = getAbsoluteSlotDates(dateSlot, timeStart, slot.startMinOffset, slot.durationMin);
-  
+
   let current = new Date(start);
   while (current < end) {
     const next = new Date(current);
@@ -227,4 +227,43 @@ export function isSubSlotUnavailable(
     const slotEnd = new Date(slot.end_at).getTime();
     return sTime < slotEnd && eTime > slotStart;
   });
+}
+
+// Get local date string as 'YYYY-MM-DD'
+export function getTodayStr(): string {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Convert YYYY-MM-DD to a local Date object (at local midnight 00:00:00)
+export function parseLocalDate(dateStr: string): Date {
+  const [yyyy, mm, dd] = dateStr.split('-').map(Number);
+  return new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+}
+
+// Convert rangeDays to the end date ('YYYY-MM-DD') from today (inclusive)
+export function getEndDateFromDays(days: number): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(today);
+  end.setDate(today.getDate() + (days - 1));
+  const yyyy = end.getFullYear();
+  const mm = String(end.getMonth() + 1).padStart(2, '0');
+  const dd = String(end.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Calculate the number of days between today (inclusive) and endDateStr (inclusive)
+export function getDaysFromEndDate(endDateStr: string): number {
+  if (!endDateStr) return 7;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = parseLocalDate(endDateStr);
+
+  const diffTime = end.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return diffDays > 0 ? diffDays : 1;
 }
